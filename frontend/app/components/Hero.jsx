@@ -4,14 +4,32 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import clubPhoto from "../../public/gachiya_club.png"
+import Link from "next/link"
 
 export default function Hero() {
   const backgroundImages = [clubPhoto,clubPhoto]
 
   return (
     <section className="relative min-h-screen overflow-hidden flex items-center justify-center">
-      {/* Background slider with zoom effect */}
-      <BackgroundSlider images={backgroundImages} />
+      {/* Background: animated slider on md+; static optimized image on mobile */}
+      <div className="absolute inset-0 z-0">
+        {/* desktop/tablet: use animated slider */}
+        <div className="hidden md:block h-full w-full overflow-hidden">
+          <BackgroundSlider images={backgroundImages} />
+        </div>
+
+        {/* mobile: simple static background to avoid heavy animation and layout shifts */}
+        <div className="block md:hidden absolute inset-0">
+          <Image
+            src={clubPhoto}
+            alt="Club background"
+            fill
+            priority
+            className="object-cover"
+            quality={75}
+          />
+        </div>
+      </div>
 
       {/* Gradient overlay for better text readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70 z-10" />
@@ -93,9 +111,9 @@ export default function Hero() {
               </span>
             </button>
 
-            <button className="px-8 py-4 border-2 border-white/80 hover:border-yellow-400 text-white hover:text-yellow-400 rounded-full font-bold text-lg backdrop-blur-sm bg-white/5 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+            <Link className="px-8 py-4 border-2 border-white/80 hover:border-yellow-400 text-white hover:text-yellow-400 rounded-full font-bold text-lg backdrop-blur-sm bg-white/5 hover:bg-white/10 transition-all duration-300 hover:scale-105" href="/events">
               Our Events
-            </button>
+            </Link>
           </motion.div>
         </motion.div>
       </div>
@@ -122,9 +140,7 @@ export default function Hero() {
   )
 }
 
-/* ----------------------------- */
-/* Background slider with effects */
-/* ----------------------------- */
+
 function BackgroundSlider({ images, interval = 5000 }) {
   const [index, setIndex] = useState(0)
 
@@ -143,11 +159,11 @@ function BackgroundSlider({ images, interval = 5000 }) {
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
-          initial={{ opacity: 0, scale: 1.1 }}
+          initial={{ opacity: 0, scale: 1.05 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 1.5, ease: "easeInOut" }}
-          className="absolute inset-0"
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 1.2, ease: "easeInOut" }}
+          className="absolute inset-0 overflow-hidden will-change-transform"
         >
           <Image
             src={images[index] || "/placeholder.svg"}
@@ -155,7 +171,7 @@ function BackgroundSlider({ images, interval = 5000 }) {
             fill
             priority
             className="object-cover"
-            quality={100}
+            quality={90}
           />
         </motion.div>
       </AnimatePresence>

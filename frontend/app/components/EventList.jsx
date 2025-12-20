@@ -3,48 +3,51 @@
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+
 import EventRegistrationForm from "./EventRegistrationForm";
 import { getAllEvents, getEventDetail } from "../api/eventRegister";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 export default function EventList() {
-  const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [openModal, setOpenModal] = useState(false);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(6);
-  const [totalEvents, setTotalEvents] = useState(0);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // local input state for debouncing
+  const [searchTerm, setSearchTerm] = useState(search);
+  const DEBOUNCE_DELAY = 350; // ms
 
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["events", page, limit, search],
+    queryFn: () => getAllEvents({ page, limit, search }),
+    keepPreviousData: true,
+    staleTime: 5 * 60 * 1000, 
+  });
+
+  const events = data?.data || [];
+  console.log("Events data:", data);
+  const totalEvents = data?.totalEvents || 0;
   const totalPages = Math.max(1, Math.ceil(totalEvents / limit));
 
-  // Fetch events
-  const fetchEvents = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resp = await getAllEvents({ page, limit, search });
-      setEvents(resp?.data || []);
-      setTotalEvents(resp?.totalEvents || 0);
-    } catch (err) {
-      console.error("Error fetching events:", err);
-      setError(err?.message || "Failed to load events");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, limit, search]);
-
+  // debounce searchTerm -> search to avoid rapid API calls while typing
   useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    const t = setTimeout(() => {
+      if (search !== searchTerm) {
+        setSearch(searchTerm);
+        setPage(1);
+      }
+    }, DEBOUNCE_DELAY);
 
-  // Handle opening event modal
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   const handleOpenModal = async (event) => {
     try {
       const resp = await getEventDetail(event.id);
@@ -63,21 +66,7 @@ export default function EventList() {
     }
   };
 
-  // Pagination handlers
-  const handlePrev = () => setPage((p) => Math.max(1, p - 1));
-  const handleNext = () => setPage((p) => Math.min(totalPages, p + 1));
-  const handleLimitChange = (e) => {
-    setLimit(parseInt(e.target.value, 10) || 6);
-    setPage(1);
-  };
-
-  // Helper for image URLs
-  const getEventImageUrl = (event) => {
-    const src = event.imageURL || event.imageUrl || event.imageURl;
-    if (!src) return null;
-    console.log(src)
-    return `${src}`
-  };
+  const getEventImageUrl = (event) => event.imageURL || event.imageUrl || event.imageURl || null;
 
   return (
     <section className="py-20 px-6 md:px-20 bg-gray-50">
@@ -95,17 +84,16 @@ export default function EventList() {
       {/* Search & Pagination Controls */}
       <div className="max-w-5xl mx-auto mb-6 px-4 flex flex-col md:flex-row gap-4 items-center">
         <input
-          value={search}
+          value={searchTerm}
           onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
+            setSearchTerm(e.target.value);
           }}
           placeholder="Search events..."
           className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none"
         />
         <div className="flex items-center gap-2">
           <button
-            onClick={handlePrev}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
             className="px-3 py-2 border rounded disabled:opacity-50"
           >
@@ -115,7 +103,7 @@ export default function EventList() {
             Page {page} / {totalPages}
           </span>
           <button
-            onClick={handleNext}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
             className="px-3 py-2 border rounded disabled:opacity-50"
           >
@@ -124,7 +112,10 @@ export default function EventList() {
         </div>
         <select
           value={limit}
-          onChange={handleLimitChange}
+          onChange={(e) => {
+            setLimit(parseInt(e.target.value, 10) || 6);
+            setPage(1);
+          }}
           className="ml-auto rounded-xl border border-gray-300 px-4 py-2.5 text-sm bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none"
         >
           {[3, 6, 9, 12].map((n) => (
@@ -137,31 +128,31 @@ export default function EventList() {
 
       {/* Event Cards */}
       <div className="max-w-5xl mx-auto flex flex-col gap-8">
-        {loading && <div className="text-center">Loading...</div>}
-        {error && <div className="text-center text-red-600">{error}</div>}
-        {!loading && events.length === 0 && <div className="text-center text-gray-500">No events found.</div>}
+        {isLoading && <div className="text-center">Loading...</div>}
+        {isError && <div className="text-center text-red-600">{error?.message}</div>}
+        {!isLoading && events.length === 0 && (
+          <div className="text-center text-gray-500">No events found.</div>
+        )}
 
         {events.map((event, index) => (
           <motion.div
             key={event.id || index}
-            className="flex flex-col md:flex-row items-center gap-6 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition"
+            className="flex flex-col md:flex-row items-center gap-6 bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition overflow-hidden"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: index * 0.15 }}
           >
             {/* Image */}
-            <div className="relative w-24 h-24 md:w-32 md:h-32 flex-shrink-0">
+            <div className="relative w-full md:w-32 h-48 md:h-32 flex-shrink-0 rounded-lg overflow-hidden">
               {getEventImageUrl(event) ? (
                 <img
                   src={getEventImageUrl(event)}
                   alt={event.title || event.name}
-                  width={400}
-                  height={160}
-                  className="w-full h-40 object-cover rounded-lg mb-4"
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
                   No image
                 </div>
               )}
@@ -184,8 +175,9 @@ export default function EventList() {
                   View Details
                 </Link>
                 <button
-                  className="self-center md:self-start px-5 py-2 rounded-full border border-black text-sm font-medium hover:bg-black hover:text-white transition duration-300"
-                  onClick={() => handleOpenModal(event)}
+                  className="self-center md:self-start px-5 py-2 rounded-full border border-black text-sm font-medium hover:bg-black hover:text-white transition duration-300 disabled:opacity-50" 
+                  onClick={() => handleOpenModal(event) }
+                  disabled={!(event.isPublish)}
                 >
                   Be a Part of it
                 </button>
@@ -232,28 +224,21 @@ export default function EventList() {
               {/* Form */}
               <EventRegistrationForm
                 selectedEvent={selectedEvent}
-                categories={
-                  selectedEvent.Categories ||
-                  selectedEvent.categories ||
-                  selectedEvent.Category ||
-                  []
-                }
+                categories={selectedEvent.Categories || selectedEvent.categories || selectedEvent.Category || []}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
                 onClose={() => setOpenModal(false)}
                 onSubmit={async (formData) => {
-                  try {
-                    const response = await fetch(`${BACKEND_URL}/api/player/register`, {
-                      method: "POST",
-                      body: formData,
-                    });
-                    const data = await response.json();
-                    console.log("Response status:", data);
-                    if (!response.ok) throw new Error("Registration failed");
-                    setOpenModal(false);
-                  } catch (err) {
-                    console.error("Registration failed", err);
+                  const response = await fetch(`${BACKEND_URL}/api/player/register`, {
+                    method: "POST",
+                    body: formData,
+                  });
+                  const data = await response.json();
+                  if (!response.ok) {
+
+                    throw new Error(data?.message || "Registration failed");
                   }
+                  return data;
                 }}
               />
             </motion.div>

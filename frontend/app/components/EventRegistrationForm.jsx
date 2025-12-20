@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function EventRegistrationForm({
   selectedEvent,
@@ -25,6 +26,8 @@ export default function EventRegistrationForm({
   const [paymentFile, setPaymentFile] = useState(null);
   const [authFile, setAuthFile] = useState(null);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     setErrors({});
@@ -71,25 +74,70 @@ export default function EventRegistrationForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
-    console.log("Submitting registration:", form, selectedCategory, paymentFile, authFile);
-    // prepare FormData to include files
     const fd = new FormData();
-    fd.append('TshirtSize', form.tshirtSize);
-    fd.append('eventId', form.eventId);
-    fd.append('fullName', form.fullName);
-    fd.append('address', form.address);
-    fd.append('dateOfBirth', form.dob);
-    fd.append('gender', form.gender);
-    fd.append('email', form.email);
-    fd.append('contactNumber', form.phone);
-    fd.append('emergencyContact', form.emergencyContact);
-    fd.append('bloodGroup', form.bloodGroup);
-    if (selectedCategory) fd.append('category', selectedCategory);
-    if (paymentFile) fd.append('paymentVoucher', paymentFile);
-    if (authFile) fd.append('authenticateDocument', authFile);
+    fd.append("TshirtSize", form.tshirtSize);
+    fd.append("eventId", form.eventId);
+    fd.append("fullName", form.fullName);
+    fd.append("address", form.address);
+    fd.append("dateOfBirth", form.dob);
+    fd.append("gender", form.gender);
+    fd.append("email", form.email);
+    fd.append("contactNumber", form.phone);
+    fd.append("emergencyContact", form.emergencyContact);
+    fd.append("bloodGroup", form.bloodGroup);
+    if (selectedCategory) fd.append("category", selectedCategory);
+    if (paymentFile) fd.append("paymentVoucher", paymentFile);
+    if (authFile) fd.append("authenticateDocument", authFile);
 
-    if (onSubmit) await onSubmit(fd);
+    try {
+      setIsSubmitting(true);
+      const response = await onSubmit(fd); // parent should return response data
+
+      // Show toast and set submitted state so UI can reflect success before closing
+      toast.success("Registration completed successfully!. Please check your email");
+      setSubmitted(true);
+
+      // If your backend returns a registration file URL show an additional toast with link
+      if (response?.registrationFileUrl) {
+        toast((t) => (
+          <span>
+            Registration completed! {" "}
+            <a href={response.registrationFileUrl} target="_blank" rel="noreferrer" className="underline text-blue-600">
+              Download here
+            </a>
+          </span>
+        ), { duration: 8000 });
+      }
+
+      // keep the filled form cleared for UX
+      setForm({
+        fullName: "",
+        address: "",
+        dob: "",
+        gender: "",
+        email: "",
+        phone: "",
+        emergencyContact: "",
+        bloodGroup: "",
+        tshirtSize: "",
+        eventId: selectedEvent?.id || selectedEvent?.eventId || null,
+      });
+      setPaymentFile(null);
+      setAuthFile(null);
+      setSelectedCategory("");
+
+      // after short delay close the modal (if parent provided onClose)
+      setTimeout(() => {
+        setIsSubmitting(false);
+        if (typeof onClose === "function") onClose();
+        // reset submitted flag after closing
+        setSubmitted(false);
+      }, 2200);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to register. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
   const renderPreview = (file) => {
@@ -106,6 +154,8 @@ export default function EventRegistrationForm({
   };
 
   return (
+    <>
+     <Toaster position="top-right" />
     <form onSubmit={handleSubmit} className="max-h-[75vh] overflow-y-auto px-6 md:px-10 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
       <div className="space-y-5">
         <div>
@@ -202,10 +252,13 @@ export default function EventRegistrationForm({
         </div>
 
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border rounded">Cancel</button>
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Submit Registration</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 border rounded" disabled={isSubmitting}>Cancel</button>
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Registration"}
+          </button>
         </div>
       </div>
     </form>
+    </>
   );
 }

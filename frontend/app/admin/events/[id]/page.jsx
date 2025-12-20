@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/app/api/interceptor";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
@@ -8,42 +9,28 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
 export default function EventDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [event, setEvent] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!id) return;
-    const fetchEvent = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const json = await apiGet(`/api/event/admin/view/${id}`);
-        setEvent(json?.data || null);
-      } catch (err) {
-        setError(err.message || "Failed to load event");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvent();
-  }, [id]);
+  // Fetch event detail
+  const { data: event, isLoading, isError, error } = useQuery({
+    queryKey: ["eventDetail", id],
+    queryFn: () => apiGet(`/api/event/admin/view/${id}`).then(res => res.data),
+    enabled: !!id,
+    staleTime: 1000 * 60,
+  });
 
   const imageSrc = (event && (event.imageURl || event.imageURL)) ? `${BACKEND_URL}/${(event.imageURl || event.imageURL)}` : null;
 
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (error) return <div className="p-6 text-red-600">{error}</div>;
+  if (isLoading) return <div className="p-6">Loading...</div>;
+  if (isError) return <div className="p-6 text-red-600">{error?.message || "Failed to load event"}</div>;
   if (!event) return <div className="p-6">No event found.</div>;
 
   const formattedDate = event.startDate ? new Date(event.startDate).toLocaleDateString() : "";
-
   const categories = event.Categories || event.categories || event.Category || [];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main content */}
+        {/* Main */}
         <article className="lg:col-span-2">
           {imageSrc ? (
             <div className="w-full h-64 md:h-96 overflow-hidden rounded-lg mb-6">
@@ -52,26 +39,15 @@ export default function EventDetailPage() {
           ) : (
             <div className="w-full h-64 md:h-96 bg-gray-100 rounded-lg mb-6 flex items-center justify-center text-gray-400">No image</div>
           )}
-
           <h1 className="text-3xl md:text-4xl font-bold mb-2">{event.title}</h1>
           <div className="text-sm text-gray-500 mb-6">{formattedDate}</div>
-
-          <div className="prose max-w-none mb-6">
-            {/* description may be plain text; keep simple formatting */}
-            <p>{event.description}</p>
-          </div>
-
+          <div className="prose max-w-none mb-6"><p>{event.description}</p></div>
           {event.note && (
             <div className="bg-yellow-50 border-l-4 border-yellow-300 p-4 rounded mb-6">
               <strong className="block text-sm text-yellow-800">Note</strong>
               <p className="text-sm text-yellow-700">{event.note}</p>
             </div>
           )}
-
-          <section className="mt-8">
-            <h2 className="text-xl font-semibold mb-3">About this event</h2>
-            <p className="text-gray-700">{event.description}</p>
-          </section>
         </article>
 
         {/* Sidebar */}

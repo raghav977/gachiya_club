@@ -38,12 +38,12 @@ export default function EventCard({ event, onEdit, onAddCategory, onCreateForm, 
         </div>
 
         <div className="flex gap-2">
-          <button
+          {/* <button
             className="text-sm px-3 py-1 border text-green-600 rounded hover:bg-green-50"
             onClick={() => onCreateForm?.(event)}
           >
             Create a Form for this
-          </button>
+          </button> */}
           <Link
             className="text-sm px-3 py-1 border text-green-600 rounded hover:bg-green-50"
             href={`/admin/events/${event.id}`}
