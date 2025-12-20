@@ -86,7 +86,6 @@ export const getAllEvent = async (req, res) => {
       });
     }
 
-  // convert stored filesystem paths into public URLs
   const data = events.map(event => {
     const e = event.toJSON ? event.toJSON() : event;
     const imgPath = e.imageURl || e.imageUrl || e.imageURL;
@@ -95,7 +94,8 @@ export const getAllEvent = async (req, res) => {
       id: e.id,
       title: e.title,
       imageURL,
-      startDate: e.startDate
+      startDate: e.startDate,
+      isPublish: e.isPublish,
     };
   });
 

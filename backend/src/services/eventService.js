@@ -60,8 +60,9 @@ export const updateEventService = async (id, title, description, note, ispublish
 export const getAllEventService = async (search = "", limit = 10, offset = 0) => {
     try {
         const events = await Event.findAll({
-          attributes: ['id', 'title', 'imageURl', 'startDate'],
+          attributes: ['id', 'title', 'imageURl', 'startDate','isPublish','isActive'],
             where: {
+              isActive: true,
                 title: {
                     [Op.like]: `%${search}%` 
                 }
@@ -74,6 +75,7 @@ export const getAllEventService = async (search = "", limit = 10, offset = 0) =>
 
         const totalEvents = await Event.count({
             where: {
+              isActive: true,
                 title: {
                     [Op.like]: `%${search}%`
                 }

@@ -10,7 +10,7 @@ const Event = sequelize.define(
     },
 
     description: {
-      type: DataTypes.STRING(250),
+      type: DataTypes.STRING(1500),
       allowNull: false,
     },
 
@@ -43,7 +43,7 @@ const Event = sequelize.define(
   {
     indexes: [
       {
-        fields: ["title"], // index on title
+        fields: ["title"], 
       },
     ],
   }

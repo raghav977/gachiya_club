@@ -3,6 +3,7 @@ import Player from "../models/playerModel.js";
 import Category from "../models/categoryModels.js";
 import { fieldValidation } from "../utils/validation.js";
 import { Op } from "sequelize";
+import sendEmail from "./emailService.js";
 
 
 
@@ -25,11 +26,28 @@ export const registerPlayerServices = async (fullName, address, dateOfBirth, gen
         }
 
         const newPlayer = await Player.create({ fullName, address, dateOfBirth, gender, email, contactNumber, TshirtSize, bloodGroup, emergencyContact, paymentVoucher, authenticateDocument, eventId, categoryId });
-
+         const formData = {
+      "Full Name": fullName,
+      Address: address,
+      "Date of Birth": dateOfBirth,
+      Gender: gender,
+      Email: email,
+      "Contact Number": contactNumber,
+      "T-Shirt Size": TshirtSize,
+      "Blood Group": bloodGroup,
+      "Emergency Contact": emergencyContact,
+      "Event": eventExist.title,
+      "Category": categoryId ? (await Category.findByPk(categoryId))?.title : "N/A",
+    };
         if (!newPlayer) {
             // console.log("Cannot create user:")
             throw new Error("Cannot create user. Please try again");
         }
+         await sendEmail({
+      to: email,
+      subject: "Player Registration Successful!",
+      formData,
+    });
         return newPlayer;
     }
     catch (err) {

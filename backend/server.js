@@ -7,54 +7,63 @@ import playerRouter from "./src/routes/playerRoutes.js";
 import categoryRouter from "./src/routes/categoryRoutes.js";
 import adminRouter from "./src/routes/adminRoutes.js";
 import path from "path";
-import { fileURLToPath } from "url"; // <-- add this
+import { fileURLToPath } from "url";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS setup
-const corsOptions = {
-  origin: 'http://localhost:3001', 
-  methods: 'GET,POST',             
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-};
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-console.log(__dirname);
 
-// enable CORS (allow frontend origin or all if not provided)
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:3001";
-const effectiveCorsOptions = {
+
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
+app.use(cors({
   origin: FRONTEND_ORIGIN,
   methods: 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
-};
+}));
 
-app.use(cors(effectiveCorsOptions));
 app.use(express.json());
-
-// Serve uploaded files publicly
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
-// Routes
+const globalLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, 
+  max: 100, 
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: "Too many requests from this IP, please try again later."
+});
+
+
+app.use(globalLimiter);
+
+
+const sensitiveLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, 
+  max: 5, 
+  message: "Too many requests from this IP, please try again later."
+});
+
+
+app.use("/api/player/register", sensitiveLimiter);
+app.use("/api/admin", sensitiveLimiter);
+
+
 app.use("/api/event", eventRouter);
 app.use("/api/player", playerRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api", adminRouter);
 
 
-// Static uploads folder
-
-
 const startServer = async () => {
   try {
-    await connectDB(); 
+    await connectDB();
     await syncDatabase();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
