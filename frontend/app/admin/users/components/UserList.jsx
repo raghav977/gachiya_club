@@ -4,20 +4,25 @@ import { useState, useEffect } from "react";
 import { FiMail, FiEye } from "react-icons/fi";
 import { useQuery } from "@tanstack/react-query";
 import UserDetailModal from "./UserDetailModal";
+import Skeleton from "@/app/components/Skeleton";
+import LoadingOverlay from "@/app/components/LoadingOverlay";
 import { getAllPlayers } from "@/app/api/player";
 import { getAllEvents, getEventDetail } from "@/app/api/eventRegister";
-import debounce from "lodash.debounce";
+import { useDebounce } from "@/app/hooks/useDebounce";
 
 export default function UserList() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedEvent, setSelectedEvent] = useState("");
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+
+  // Debounce search term
+  const search = useDebounce(searchTerm, 500);
 
   const { data: eventsData = [] } = useQuery({
     queryKey: ["eventsList"],
@@ -48,7 +53,7 @@ export default function UserList() {
     fetchEventDetail();
   }, [selectedEvent]);
 
-  const { data: playersData, isLoading, isError } = useQuery({
+  const { data: playersData, isLoading, isFetching, isError } = useQuery({
     queryKey: ["playersList", page, limit, search, selectedEvent, selectedCategory],
     queryFn: () =>
       getAllPlayers({
@@ -65,10 +70,8 @@ export default function UserList() {
   const total = playersData?.total || 0;
   const totals = playersData?.totals || { overall: "-", event: "-", category: "-" };
 
-  const handleSearch = debounce(val => {
-    setSearch(val);
-    setPage(1);
-  }, 500);
+  // Show overlay when fetching but not initial load
+  const showFetchingOverlay = isFetching && !isLoading;
 
   const openModal = (id) => {
     setSelectedUserId(id);
@@ -84,7 +87,11 @@ export default function UserList() {
         <input
           type="text"
           placeholder="Search by name or email..."
-          onChange={(e) => handleSearch(e.target.value)}
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1);
+          }}
           className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
@@ -117,9 +124,21 @@ export default function UserList() {
       </div>
 
       {/* Player Table */}
-      {isLoading && <div className="text-gray-500">Loading players...</div>}
-      {isError && <div className="text-red-500">Failed to load players</div>}
-      {!isLoading && !isError && (
+      <div className="relative min-h-[300px]">
+        {/* Overlay for refetching (filter changes, pagination, search) */}
+        <LoadingOverlay
+          isLoading={showFetchingOverlay}
+          message="Updating player list..."
+          variant="dots"
+        />
+
+        {isLoading && (
+          <div className="space-y-4">
+            <Skeleton variant="row" count={8} />
+          </div>
+        )}
+        {isError && <div className="text-red-500">Failed to load players</div>}
+        {!isLoading && !isError && (
         <>
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto bg-white rounded-lg shadow">
@@ -196,6 +215,7 @@ export default function UserList() {
           </div>
         </>
       )}
+      </div>
 
       {/* Modal */}
       {showModal && (

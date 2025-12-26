@@ -11,8 +11,9 @@ export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const sideBarItems = [
-    { name: "Dashboard", link: "/admin/dashboard" },
+    // { name: "Dashboard", link: "/admin/dashboard" },
     { name: "Events", link: "/admin/events" },
+    { name: "Gallery", link: "/admin/gallery" },
     { name: "Notices", link: "/admin/notices" },
     { name: "Resources", link: "/admin/resources" },
     { name: "Users", link: "/admin/users" },

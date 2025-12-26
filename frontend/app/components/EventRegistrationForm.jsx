@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import qrcode from "@/public/qrcodebank.jpeg";
+import Skeleton from "./Skeleton";
 
 export default function EventRegistrationForm({
   selectedEvent,
@@ -40,10 +42,13 @@ export default function EventRegistrationForm({
   const validate = () => {
     const errs = {};
     if (!form.fullName.trim()) errs.fullName = "Full name is required";
+    else if (form.fullName.length > 100) errs.fullName = "Full name must be at most 100 characters";
     if (!form.address.trim()) errs.address = "Address is required";
+    else if (form.address.length > 250) errs.address = "Address must be at most 250 characters";
     if (!form.dob) errs.dob = "Date of birth is required";
     if (!form.gender) errs.gender = "Gender is required";
     if (!form.email) errs.email = "Email is required";
+    else if (form.email.length > 100) errs.email = "Email must be at most 100 characters";
     if (!form.phone) errs.phone = "Phone is required";
     else {
       const cleaned = form.phone.trim();
@@ -51,6 +56,7 @@ export default function EventRegistrationForm({
     }
     if (!selectedCategory && (categories && categories.length > 0)) errs.category = "Please select category";
     if (!form.emergencyContact) errs.emergencyContact = "Emergency contact is required";
+    else if (form.emergencyContact.length > 20) errs.emergencyContact = "Emergency contact must be at most 20 characters";
     if (!form.bloodGroup) errs.bloodGroup = "Blood group is required";
     if (!form.tshirtSize) errs.tshirtSize = "Tshirt size is required";
 
@@ -156,17 +162,18 @@ export default function EventRegistrationForm({
   return (
     <>
      <Toaster position="top-right" />
-    <form onSubmit={handleSubmit} className="max-h-[75vh] overflow-y-auto px-6 md:px-10 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className="relative">
+      <form onSubmit={handleSubmit} className="max-h-[75vh] overflow-y-auto px-6 md:px-10 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
       <div className="space-y-5">
         <div>
           <label className={labelClass}>Full Name</label>
-          <input className={inputClass} type="text" value={form.fullName} onChange={(e)=>setForm({...form, fullName: e.target.value})} />
+          <input className={inputClass} type="text" value={form.fullName} onChange={(e)=>setForm({...form, fullName: e.target.value})} maxLength={100} />
           {errors.fullName && <div className="text-xs text-red-600">{errors.fullName}</div>}
         </div>
 
         <div>
           <label className={labelClass}>Address</label>
-          <input className={inputClass} type="text" value={form.address} onChange={(e)=>setForm({...form, address: e.target.value})} />
+          <input className={inputClass} type="text" value={form.address} onChange={(e)=>setForm({...form, address: e.target.value})} maxLength={250} />
           {errors.address && <div className="text-xs text-red-600">{errors.address}</div>}
         </div>
 
@@ -189,13 +196,13 @@ export default function EventRegistrationForm({
 
         <div>
           <label className={labelClass}>Email</label>
-          <input className={inputClass} type="email" value={form.email} onChange={(e)=>setForm({...form, email: e.target.value})} />
+          <input className={inputClass} type="email" value={form.email} onChange={(e)=>setForm({...form, email: e.target.value})} maxLength={100} />
           {errors.email && <div className="text-xs text-red-600">{errors.email}</div>}
         </div>
 
         <div>
           <label className={labelClass}>Phone Number</label>
-          <input className={inputClass} type="tel" value={form.phone} onChange={(e)=>setForm({...form, phone: e.target.value})} placeholder="98xxxxxxxx" />
+          <input className={inputClass} type="tel" value={form.phone} onChange={(e)=>setForm({...form, phone: e.target.value})} placeholder="98xxxxxxxx" maxLength={10} />
           {errors.phone && <div className="text-xs text-red-600">{errors.phone}</div>}
         </div>
 
@@ -216,7 +223,7 @@ export default function EventRegistrationForm({
       <div className="space-y-5">
         <div>
           <label className={labelClass}>Emergency Contact (Name & Number)</label>
-          <input className={inputClass} type="text" value={form.emergencyContact} onChange={(e)=>setForm({...form, emergencyContact: e.target.value})} />
+          <input className={inputClass} type="text" value={form.emergencyContact} onChange={(e)=>setForm({...form, emergencyContact: e.target.value})} maxLength={20} />
           {errors.emergencyContact && <div className="text-xs text-red-600">{errors.emergencyContact}</div>}
         </div>
 
@@ -250,6 +257,13 @@ export default function EventRegistrationForm({
           <div className="mt-2">{renderPreview(authFile)}</div>
           {errors.authFile && <div className="text-xs text-red-600">{errors.authFile}</div>}
         </div>
+        <div>
+          <label className={labelClass}>Scan the QR Code for Payment</label>
+          <div className="w-40 h-40">
+            <img src={qrcode.src} alt="QR Code" className="object-cover rounded" />
+          </div>
+          
+        </div>
 
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="px-4 py-2 border rounded" disabled={isSubmitting}>Cancel</button>
@@ -259,6 +273,20 @@ export default function EventRegistrationForm({
         </div>
       </div>
     </form>
+      {isSubmitting && (
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="max-w-md w-full px-6">
+            <div className="flex items-center justify-center mb-4">
+              <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+              </svg>
+            </div>
+            <Skeleton variant="card" count={1} />
+          </div>
+        </div>
+      )}
+    </div>
     </>
   );
 }

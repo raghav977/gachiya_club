@@ -1,70 +1,90 @@
 "use client";
 
 import { motion } from "framer-motion";
-import clubLogo from "../../public/gachiya_club.png";
 import Image from "next/image";
+import Link from "next/link";
+import clubLogo from "../../public/gachiya_club.png";
+import work from "@/public/work1.jpeg"
+import work2 from "@/public/work3.jpeg"
 
 export default function OurWork() {
-  const works = [
+  const sections = [
     {
-      title: "Tech Workshop 2025",
-      description: "Hands-on workshop on web development.",
-      image: clubLogo,
+      title: "Uniting for good",
+      description:
+        "Our members make a difference every day, everywhere we serve. With the support of our community and dedicated volunteers, we are changing lives and building a better future for all.",
+      image: work,
+      imageLeft: true,
     },
     {
-      title: "Community Drive",
-      description: "Organized donation and awareness event.",
-      image: clubLogo,
-    },
-    {
-      title: "Annual Meetup",
-      description: "Networking and fun activities for members.",
-      image: clubLogo,
-    },
-    {
-      title: "Coding Competition",
-      description: "Competitive coding event for club members.",
-      image: clubLogo,
-    },
-    {
-      title: "Hackathon",
-      description: "24-hour team challenge to build creative projects.",
-      image: clubLogo,
+      title: "Serving with purpose",
+      description:
+        "We serve our local communities in so many ways, and we're uniting to serve broader causes and special initiatives to address some of the greatest challenges facing our society today.",
+      image: work2,
+      imageLeft: false,
     },
   ];
 
   return (
-    <section className="py-20 px-6 md:px-20 bg-gray-50">
-      <h1 className="text-4xl md:text-5xl font-bold text-center mb-12">
-        Our Works
-      </h1>
+    <section className="py-16 md:py-24 bg-white">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Section Title */}
+        <motion.div
+          className="mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Making a global impact
+          </h2>
+          <div className="w-12 h-1 bg-amber-500 mt-3" />
+        </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {works.map((work, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false }}
-            transition={{ duration: 0.5, delay: index * 0.2 }}
-            className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition cursor-pointer"
-          >
-            <div className="relative w-full h-56">
-              <Image
-                src={work.image}
-                alt={work.title}
-                className="object-cover rounded-t-xl"
-                fill
-                style={{ objectFit: "cover" }}
-              />
-            </div>
+        {/* Alternating Sections */}
+        <div className="space-y-16 md:space-y-24">
+          {sections.map((section, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className={`flex flex-col ${
+                section.imageLeft ? "md:flex-row" : "md:flex-row-reverse"
+              } gap-8 md:gap-12 items-center`}
+            >
+              {/* Image */}
+              <div className="w-full md:w-1/2">
+                <div className="relative aspect-[4/3] rounded-lg overflow-hidden">
+                  <Image
+                    src={section.image}
+                    alt={section.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
 
-            <div className="p-4">
-              <h2 className="text-xl font-semibold">{work.title}</h2>
-              <p className="mt-2 text-gray-600">{work.description}</p>
-            </div>
-          </motion.div>
-        ))}
+              {/* Content */}
+              <div className="w-full md:w-1/2">
+                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                  {section.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed mb-6">
+                  {section.description}
+                </p>
+                <Link
+                  href="/about"
+                  className="inline-block px-6 py-2.5 bg-blue-900 text-white text-sm font-medium rounded hover:bg-blue-800 transition-colors"
+                >
+                  Learn more
+                </Link>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );

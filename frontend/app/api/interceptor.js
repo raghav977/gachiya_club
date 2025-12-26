@@ -47,3 +47,4 @@ export const apiPost = (endpoint, body) => apiFetch(endpoint, { method: "POST", 
 export const apiPatch = (endpoint, body) => apiFetch(endpoint, { method: "PATCH", body: JSON.stringify(body) });
 export const apiDelete = (endpoint) => apiFetch(endpoint, { method: "DELETE" });
 export const apiPostForm = (endpoint, formData) => apiFetch(endpoint, { method: "POST", body: formData });
+export const apiPut = (endpoint, body) => apiFetch(endpoint, { method: "PUT", body: JSON.stringify(body) });

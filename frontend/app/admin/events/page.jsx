@@ -4,12 +4,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import FormBuilder from "../components/FormBuilder";
+import { useDebounce } from "@/app/hooks/useDebounce";
 import { eventRegister, getAllEvents, updateEvent } from "@/app/api/eventRegister";
 import CategoryModal from "../components/CategoryModal";
 import EventCard from "../components/EventCard";
 import SearchBar from "../components/SearchBar";
 import CreateEventModal from "../components/CreateEventModal";
 import EditEventModal from "../components/EditEventModal";
+import LoadingOverlay from "@/app/components/LoadingOverlay";
 
 export default function EventPage() {
   const [activeEvent, setActiveEvent] = useState(null);
@@ -17,40 +19,54 @@ export default function EventPage() {
   const [categoryModal, setCategoryModal] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(6);
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
+  // Debounce search
+  const search = useDebounce(searchTerm, 400);
+
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Fetch events
-  const { data, isLoading, isError, error } = useQuery({
+  /* =======================
+     Queries
+  ======================== */
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["adminEvents", page, limit, search],
     queryFn: () => getAllEvents({ page, limit, search }),
-    staleTime: 1000 * 60, // 1 min
-    keepPreviousData: true
+    staleTime: 1000 * 60,
+    keepPreviousData: true,
   });
 
-  const events = data?.data || [];
-  const totalEvents = data?.totalEvents || 0;
+  const events = data?.data ?? [];
+  const totalEvents = data?.totalEvents ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalEvents / limit));
 
-  // Mutations
+  /* =======================
+     Mutations
+  ======================== */
   const createMutation = useMutation({
     mutationFn: eventRegister,
     onSuccess: (newEvent) => {
       queryClient.invalidateQueries({ queryKey: ["adminEvents"] });
-      if (newEvent?.id) queryClient.invalidateQueries({ queryKey: ["eventDetail", newEvent.id] });
+      if (newEvent?.id) {
+        queryClient.invalidateQueries({ queryKey: ["eventDetail", newEvent.id] });
+      }
       setShowCreateModal(false);
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, form }) => updateEvent(id, form),
-    onSuccess: (_, variables) => {
-      const { id } = variables;
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["adminEvents"] });
       queryClient.invalidateQueries({ queryKey: ["eventDetail", id] });
       setShowEditModal(false);
@@ -58,15 +74,41 @@ export default function EventPage() {
     },
   });
 
-  // Handlers
+  /* =======================
+     Derived State
+  ======================== */
+  const showFetchingOverlay =
+    (isFetching && !isLoading) ||
+    createMutation.isPending ||
+    updateMutation.isPending;
+
+  /* =======================
+     Handlers
+  ======================== */
   const handleCreateEvent = (form) => createMutation.mutate(form);
-  const handleEditSave = (form) => updateMutation.mutate({ id: selectedEvent.id, form });
-  const openEdit = (event) => { setSelectedEvent(event); setShowEditModal(true); };
+
+  const handleEditSave = (form) =>
+    updateMutation.mutate({ id: selectedEvent.id, form });
+
+  const openEdit = (event) => {
+    setSelectedEvent(event);
+    setShowEditModal(true);
+  };
+
   const handlePrev = () => setPage((p) => Math.max(1, p - 1));
   const handleNext = () => setPage((p) => Math.min(totalPages, p + 1));
-  const handleLimitChange = (e) => { setLimit(parseInt(e.target.value, 10) || 6); setPage(1); };
-  const handleEventView = (event) => router.push(`/admin/events/${event.id}`);
 
+  const handleLimitChange = (e) => {
+    setLimit(Number(e.target.value) || 6);
+    setPage(1);
+  };
+
+  const handleEventView = (event) =>
+    router.push(`/admin/events/${event.id}`);
+
+  /* =======================
+     Render
+  ======================== */
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -81,46 +123,140 @@ export default function EventPage() {
       </div>
 
       {/* Search */}
-      <SearchBar search={search} setSearch={(val) => { setSearch(val); setPage(1); }} />
+      <SearchBar
+        search={searchTerm}
+        setSearch={(val) => {
+          setSearchTerm(val);
+          setPage(1);
+        }}
+      />
 
       {/* Pagination */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <button onClick={handlePrev} className="px-3 py-1 border rounded" disabled={page <= 1}>Prev</button>
-          <button onClick={handleNext} className="px-3 py-1 border rounded" disabled={page >= totalPages}>Next</button>
-          <span className="text-sm text-gray-600">Page {page} of {totalPages}</span>
+          <button
+            onClick={handlePrev}
+            className="px-3 py-1 border rounded"
+            disabled={page <= 1}
+          >
+            Prev
+          </button>
+          <button
+            onClick={handleNext}
+            className="px-3 py-1 border rounded"
+            disabled={page >= totalPages}
+          >
+            Next
+          </button>
+          <span className="text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </span>
         </div>
+
         <div className="flex items-center gap-2">
           <label className="text-sm">Per page:</label>
-          <select value={limit} onChange={handleLimitChange} className="border px-2 py-1 rounded">
-            {[3, 6, 9, 12].map((n) => (<option key={n} value={n}>{n}</option>))}
+          <select
+            value={limit}
+            onChange={handleLimitChange}
+            className="border px-2 py-1 rounded"
+          >
+            {[3, 6, 9, 12].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
       {/* Event Cards */}
-      {isLoading && <div>Loading events...</div>}
-      {isError && <div className="text-red-600">{error?.message}</div>}
-      {!isLoading && !isError && (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {events.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              onEdit={() => openEdit(event)}
-              onAddCategory={() => { setActiveEvent(event); setCategoryModal(true); }}
-              onCreateForm={() => { setActiveEvent(event); setShowFormBuilder(true); }}
-              onView={() => handleEventView(event)}
-            />
-          ))}
-        </div>
-      )}
+      <div className="relative min-h-[200px]">
+        <LoadingOverlay
+          isLoading={showFetchingOverlay}
+          message={
+            createMutation.isPending
+              ? "Creating event..."
+              : updateMutation.isPending
+              ? "Updating event..."
+              : "Loading..."
+          }
+          variant="spinner"
+        />
+
+        {isLoading && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: limit }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-lg shadow-md p-4 animate-pulse"
+              >
+                <div className="h-40 bg-gray-200 rounded-lg mb-4" />
+                <div className="h-5 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isError && (
+          <div className="text-red-600">{error?.message}</div>
+        )}
+
+        {!isLoading && !isError && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {events.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                onEdit={() => openEdit(event)}
+                onAddCategory={() => {
+                  setActiveEvent(event);
+                  setCategoryModal(true);
+                }}
+                onCreateForm={() => {
+                  setActiveEvent(event);
+                  setShowFormBuilder(true);
+                }}
+                onView={() => handleEventView(event)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Modals */}
-      {showCreateModal && <CreateEventModal show={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateEvent} />}
-      {showEditModal && selectedEvent && <EditEventModal show={showEditModal} onClose={() => setShowEditModal(false)} event={selectedEvent} onSave={handleEditSave} />}
-      {showFormBuilder && <FormBuilder activeEvent={activeEvent} setShowFormBuilder={setShowFormBuilder} />}
-      {categoryModal && <CategoryModal setCategoryModal={setCategoryModal} event={activeEvent} />}
+      {showCreateModal && (
+        <CreateEventModal
+          show={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreate={handleCreateEvent}
+          isLoading={createMutation.isPending}
+        />
+      )}
+
+      {showEditModal && selectedEvent && (
+        <EditEventModal
+          show={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          event={selectedEvent}
+          onSave={handleEditSave}
+          isLoading={updateMutation.isPending}
+        />
+      )}
+
+      {showFormBuilder && (
+        <FormBuilder
+          activeEvent={activeEvent}
+          setShowFormBuilder={setShowFormBuilder}
+        />
+      )}
+
+      {categoryModal && (
+        <CategoryModal
+          setCategoryModal={setCategoryModal}
+          event={activeEvent}
+        />
+      )}
     </div>
   );
 }

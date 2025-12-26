@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import Header from "@/app/components/Header";
 import EventRegistrationForm from "@/app/components/EventRegistrationForm";
+import Skeleton from "@/app/components/Skeleton";
 import { getEventDetail } from "@/app/api/eventRegister";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
@@ -25,9 +26,18 @@ export default function EventDetail() {
     staleTime: 5 * 60 * 1000, 
   });
 
-  if (isLoading) return <div>Loading event...</div>;
+  if (isLoading)
+    return (
+      <div>
+        <Header />
+        <div className="max-w-4xl mx-auto py-12 px-6">
+          <Skeleton variant="card" count={1} />
+        </div>
+      </div>
+    );
   if (error) return <div className="text-red-600">Failed to load event.</div>;
   if (!event) return <div>No event found.</div>;
+  // show skeleton if still loading (handled above) - but we'll replace the simple text with a nicer skeleton
 
   return (
     <div>

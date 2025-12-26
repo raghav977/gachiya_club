@@ -41,3 +41,10 @@ body {
   /* Prevent site-wide horizontal scroll caused by occasional scaled/absolute elements */
   overflow-x: hidden;
 }
+
+/* Shimmer animation for skeleton placeholders */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

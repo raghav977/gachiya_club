@@ -54,7 +54,20 @@ export default function UserDetailModal({ playerId, onClose }) {
 
         {/* Body */}
         {isLoading ? (
-          <p>Loading player details...</p>
+          <div className="space-y-4 animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-5 bg-gray-200 rounded w-2/3" />
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-1/4" />
+              <div className="h-32 bg-gray-200 rounded" />
+            </div>
+          </div>
         ) : error ? (
           <p className="text-red-600">Failed to load player details.</p>
         ) : !data ? (

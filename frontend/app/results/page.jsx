@@ -1,3 +1,4 @@
+import Footer from "../components/Footer";
 import Header from "../components/Header";
 
 export default function ResultPage() {
@@ -8,6 +9,7 @@ export default function ResultPage() {
         <div className="p-8 text-center text-2xl font-semibold flex justify-center items-center min-h-[80vh]">
             Coming soon
         </div>
+        <Footer/>
         </div>
     )
 }
