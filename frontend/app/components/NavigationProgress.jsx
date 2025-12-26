@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
 
-export default function NavigationProgress() {
+function NavigationProgressInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -151,5 +151,14 @@ export default function NavigationProgress() {
         style={{ width: `${Math.min(progress, 100)}%` }}
       />
     </div>
+  );
+}
+
+// Wrap in Suspense to handle useSearchParams during SSR/static generation
+export default function NavigationProgress() {
+  return (
+    <Suspense fallback={null}>
+      <NavigationProgressInner />
+    </Suspense>
   );
 }
