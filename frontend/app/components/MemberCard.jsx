@@ -14,7 +14,7 @@ export default function MemberCard({ member, index = 0, compact = false }) {
     testimonial = "",
     avatar = null,
   } = member || {};
-  console.log(avatar);
+  console.log("this is avatar", avatar);
 
   const maxLength = 180;
   const isLong = testimonial.length > maxLength;
@@ -61,7 +61,7 @@ export default function MemberCard({ member, index = 0, compact = false }) {
         <div className="w-40 h-40 border rounded-full overflow-hidden ring-4 ring-amber-400 bg-gradient-to-br from-blue-100 to-amber-100 shadow-lg mt-4">
           {avatar ? (
             <img
-              src={avatar.src}
+              src={avatar}
               alt={name}
               className="w-full h-full object-cover"
             />

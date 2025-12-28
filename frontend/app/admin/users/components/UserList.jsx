@@ -1,25 +1,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiMail, FiEye } from "react-icons/fi";
-import { useQuery } from "@tanstack/react-query";
+import { FiMail, FiEye, FiCheck, FiX } from "react-icons/fi";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import UserDetailModal from "./UserDetailModal";
 import Skeleton from "@/app/components/Skeleton";
 import LoadingOverlay from "@/app/components/LoadingOverlay";
-import { getAllPlayers } from "@/app/api/player";
+import { getAllPlayers, verifyPlayer, rejectPlayer } from "@/app/api/player";
 import { getAllEvents, getEventDetail } from "@/app/api/eventRegister";
 import { useDebounce } from "@/app/hooks/useDebounce";
+import { formatBibNumber } from "@/app/utils/formatBib";
 
 export default function UserList() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectPlayerId, setRejectPlayerId] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEvent, setSelectedEvent] = useState("");
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+
+  const queryClient = useQueryClient();
 
   // Debounce search term
   const search = useDebounce(searchTerm, 500);
@@ -54,7 +61,7 @@ export default function UserList() {
   }, [selectedEvent]);
 
   const { data: playersData, isLoading, isFetching, isError } = useQuery({
-    queryKey: ["playersList", page, limit, search, selectedEvent, selectedCategory],
+    queryKey: ["playersList", page, limit, search, selectedEvent, selectedCategory, statusFilter],
     queryFn: () =>
       getAllPlayers({
         page,
@@ -62,6 +69,7 @@ export default function UserList() {
         search,
         eventId: selectedEvent || null,
         categoryId: selectedCategory || null,
+        status: statusFilter || null,
       }),
     keepPreviousData: true,
   });
@@ -70,12 +78,73 @@ export default function UserList() {
   const total = playersData?.total || 0;
   const totals = playersData?.totals || { overall: "-", event: "-", category: "-" };
 
+  // Verify mutation
+  const verifyMutation = useMutation({
+    mutationFn: verifyPlayer,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["playersList"]);
+    },
+  });
+
+  // Reject mutation
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }) => rejectPlayer(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["playersList"]);
+      setRejectModalOpen(false);
+      setRejectPlayerId(null);
+      setRejectReason("");
+    },
+  });
+
+  const handleVerify = (id) => {
+    if (confirm("Are you sure you want to verify this player? A BIB number will be assigned and an email will be sent.")) {
+      verifyMutation.mutate(id);
+    }
+  };
+
+  const handleRejectClick = (id) => {
+    setRejectPlayerId(id);
+    setRejectModalOpen(true);
+  };
+
+  const handleRejectSubmit = () => {
+    if (rejectPlayerId) {
+      rejectMutation.mutate({ id: rejectPlayerId, reason: rejectReason });
+    }
+  };
+
   // Show overlay when fetching but not initial load
   const showFetchingOverlay = isFetching && !isLoading;
 
   const openModal = (id) => {
     setSelectedUserId(id);
     setShowModal(true);
+  };
+
+  const getStatusBadge = (status, bibNumber) => {
+    switch (status) {
+      case "verified":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+            <FiCheck className="w-3 h-3" />
+            Verified {bibNumber && `• BIB #${formatBibNumber(bibNumber)}`}
+          </span>
+        );
+      case "rejected":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+            <FiX className="w-3 h-3" />
+            Rejected
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+            Pending
+          </span>
+        );
+    }
   };
 
   return (
@@ -117,6 +186,20 @@ export default function UserList() {
             <option key={c.id} value={c.id}>{c.title}</option>
           ))}
         </select>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="verified">Verified</option>
+          <option value="rejected">Rejected</option>
+        </select>
       </div>
 
       <div className="text-sm text-gray-500">
@@ -145,36 +228,61 @@ export default function UserList() {
             <table className="min-w-full border-collapse">
               <thead className="bg-gray-100">
                 <tr>
-                  {["ID","Name","Event","Category","Contact","Email","Actions"].map((h) => (
-                    <th key={h} className="px-6 py-3 text-left text-sm font-medium text-gray-600">{h}</th>
+                  {["ID","Name","Event","Category","Status","Rejection Reason","Contact","Actions"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-sm font-medium text-gray-600">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {players.map(p => (
                   <tr key={p.id} className="border-b hover:bg-gray-50 transition">
-                    <td className="px-6 py-3">{p.id}</td>
-                    <td className="px-6 py-3 font-medium">{p.fullName}</td>
-                    <td className="px-6 py-3">{p.Event?.title || "-"}</td>
-                    <td className="px-6 py-3">{p.Category?.title || "-"}</td>
-                    <td className="px-6 py-3">{p.contactNumber}</td>
-                    <td className="px-6 py-3">{p.email || "-"}</td>
-                    <td className="px-6 py-3 flex gap-2">
-                      <button
-                        className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-                        onClick={() => openModal(p.id)}
-                      >
-                        <FiEye /> View
-                      </button>
-                      <button
-                        className={`flex items-center gap-1 px-3 py-1 rounded text-sm ${
-                          p.email ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        }`}
-                        disabled={!p.email}
-                        onClick={() => p.email && (window.location.href = `mailto:${p.email}`)}
-                      >
-                        <FiMail /> Email
-                      </button>
+                    <td className="px-4 py-3">{p.id}</td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{p.fullName}</div>
+                      <div className="text-xs text-gray-500">{p.email || "-"}</div>
+                    </td>
+                    <td className="px-4 py-3">{p.Event?.title || "-"}</td>
+                    <td className="px-4 py-3">{p.Category?.title || "-"}</td>
+                    <td className="px-4 py-3">
+                      {getStatusBadge(p.verificationStatus, p.bibNumber)}
+                    </td>
+                    <td className="px-4 py-3">{p.rejectionReason || "-"}</td>
+                    <td className="px-4 py-3">{p.contactNumber}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        <button
+                          className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                          onClick={() => openModal(p.id)}
+                        >
+                          <FiEye className="w-3 h-3" /> View
+                        </button>
+                        {p.verificationStatus === "pending" && (
+                          <>
+                            <button
+                              className="flex items-center gap-1 px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs disabled:opacity-50"
+                              onClick={() => handleVerify(p.id)}
+                              disabled={verifyMutation.isPending}
+                            >
+                              <FiCheck className="w-3 h-3" /> Verify
+                            </button>
+                            <button
+                              className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs disabled:opacity-50"
+                              onClick={() => handleRejectClick(p.id)}
+                              disabled={rejectMutation.isPending}
+                            >
+                              <FiX className="w-3 h-3" /> Reject
+                            </button>
+                          </>
+                        )}
+                        {p.email && p.verificationStatus !== "pending" && (
+                          <button
+                            className="flex items-center gap-1 px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
+                            onClick={() => window.location.href = `mailto:${p.email}`}
+                          >
+                            <FiMail className="w-3 h-3" /> Email
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -190,25 +298,46 @@ export default function UserList() {
                   <h2 className="font-semibold text-lg">{p.fullName}</h2>
                   <span className="text-gray-400 text-sm">ID: {p.id}</span>
                 </div>
+                <div className="mb-2">
+                  {getStatusBadge(p.verificationStatus, p.bibNumber)}
+                </div>
                 <p className="text-gray-500 text-sm">Event: {p.Event?.title || "-"}</p>
                 <p className="text-gray-500 text-sm">Category: {p.Category?.title || "-"}</p>
                 <p className="text-gray-500 text-sm">Contact: {p.contactNumber}</p>
-                <div className="flex gap-2 mt-2">
+                {p.email && <p className="text-gray-500 text-sm">Email: {p.email}</p>}
+                <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
                   <button
                     className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
                     onClick={() => openModal(p.id)}
                   >
                     <FiEye /> View
                   </button>
-                  <button
-                    className={`flex items-center gap-1 px-3 py-1 rounded text-sm ${
-                      p.email ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
-                    disabled={!p.email}
-                    onClick={() => p.email && (window.location.href = `mailto:${p.email}`)}
-                  >
-                    <FiMail /> Email
-                  </button>
+                  {p.verificationStatus === "pending" && (
+                    <>
+                      <button
+                        className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm disabled:opacity-50"
+                        onClick={() => handleVerify(p.id)}
+                        disabled={verifyMutation.isPending}
+                      >
+                        <FiCheck /> Verify
+                      </button>
+                      <button
+                        className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm disabled:opacity-50"
+                        onClick={() => handleRejectClick(p.id)}
+                        disabled={rejectMutation.isPending}
+                      >
+                        <FiX /> Reject
+                      </button>
+                    </>
+                  )}
+                  {p.email && p.verificationStatus !== "pending" && (
+                    <button
+                      className="flex items-center gap-1 px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+                      onClick={() => window.location.href = `mailto:${p.email}`}
+                    >
+                      <FiMail /> Email
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -217,12 +346,50 @@ export default function UserList() {
       )}
       </div>
 
-      {/* Modal */}
+      {/* User Detail Modal */}
       {showModal && (
         <UserDetailModal
           playerId={selectedUserId}
           onClose={() => setShowModal(false)}
         />
+      )}
+
+      {/* Reject Reason Modal */}
+      {rejectModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Reject Registration</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Are you sure you want to reject this registration? You can optionally provide a reason.
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Reason for rejection (optional)..."
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+              rows={3}
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setRejectModalOpen(false);
+                  setRejectPlayerId(null);
+                  setRejectReason("");
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectSubmit}
+                disabled={rejectMutation.isPending}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {rejectMutation.isPending ? "Rejecting..." : "Reject"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

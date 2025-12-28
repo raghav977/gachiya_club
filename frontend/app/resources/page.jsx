@@ -32,8 +32,7 @@ export default function ResourcesPage() {
     const url = resource.url || resource.fileUrl || resource.file;
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    const filename = url.split('/').pop();
-    return `${BACKEND_URL}/uploads/${filename}`;
+    return `${BACKEND_URL}/${url}`;
   };
 
   // Get file extension for icon

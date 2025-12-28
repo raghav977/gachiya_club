@@ -30,14 +30,7 @@ export default function GalleryPage() {
     // already absolute URL
     if (url.startsWith("http")) return url;
 
-    // convert filesystem path → public URL
-    const uploadsIndex = url.indexOf("/uploads/");
-    if (uploadsIndex !== -1) {
-      console.log(`${BACKEND_URL}${url.slice(uploadsIndex)}`);
-      return `${BACKEND_URL}${url.slice(uploadsIndex)}`;
-    }
-
-    return "";
+      return `${BACKEND_URL}/${url}`;
   };
 
   return (

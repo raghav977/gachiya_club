@@ -232,7 +232,7 @@ export default function EventList() {
               {/* Header */}
               <div className="sticky top-0 z-10 bg-white border-b px-6 md:px-10 py-5">
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={() => setOpenModal(false)}
                   className="absolute right-5 top-5 text-gray-400 hover:text-black text-xl"
                   aria-label="Close modal"
                 >

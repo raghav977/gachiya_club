@@ -1,150 +1,59 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import MemberCard, { MemberCardSkeleton } from "../components/MemberCard";
-import president from "@/public/presidentnew.jpg"
-import secretary from "@/public/secretarynew.jpeg"
-import comite1 from "@/public/comitemember1.jpeg"
-import vicePresident from "@/public/vicepresidentnew.jpeg"
-import vicesecretary from "@/public/shradha.jpeg"
-import ordinary from "@/public/ordinarymember.jpeg"
-import comite from "@/public/comite2.jpeg"
-import treasurer from "@/public/treasurernew.jpg"
-import mediaHandler from "@/public/media2.jpeg"
-import yogesh from "@/public/nextexectve.jpeg"
 import Footer from "../components/Footer";
+import { getPublicMembers } from "../api/members";
+import { getImageUrl } from "../utils/getImage";
 
-
-
-const ALL_MEMBERS = [
-  {
-    id: 1,
-    name: "Eak Raj Pokhrel",
-    role: "President",
-    organization: "Srijansil Club",
-    testimonial:
-      "A leader with a right bunch of team really makes impact in the overall functioning of the organization which is what makes Srijansil Club today. Proud to lead such a team of youths with amples of innovative ideas.",
-    avatar: president,
-  },
-  {
-    id: 2,
-    name: "Jiwan Ghimire",
-    role: "Vice President",
-    organization: "Srijansil Club",
-    testimonial:
-      "The Srijansil Club brings together passionate individuals from diverse backgrounds. Our events and initiatives have helped countless students discover their potential and build lasting connections that extend far beyond our club activities.",
-    avatar: vicePresident,
-  },
-  {
-    id: 3,
-    name: "Prashant Bikram Thapa",
-    role: "Secretary",
-    organization: "Srijansil Club",
-    testimonial:
-      "Together, we share ideas, spark creativity, and turn our visions into reality. With the Srijansil Club Family, our hometown becomes more than just a place , it transforms into a beacon of inspiration for all..",
-    avatar: secretary,
-  },
-  {
-    id: 4,
-    name: "Rojita Karki",
-    role: "Committee Member",
-    organization: "Srijansil Club",
-    testimonial:
-      "Joining Srijansil Club was one of the best decisions I've made. The opportunities for leadership development and community service have been transformative for my personal growth and professional development.",
-    avatar: comite1,
-  },
-  {
-    id: 5,
-    name: "Rupesh Basnet",
-    role: "Committee Member",
-    organization: "Srijansil Club",
-    testimonial:
-      "Joining Srijansil Club was one of the best decisions I've made. The opportunities for leadership development and community service have been transformative for my personal growth and professional development.",
-    avatar: comite,
-  },
-  {
-    id: 6,
-    name: "Saurav Ghimire",
-    role: "Treasurer",
-    organization: "Srijansil Club",
-    testimonial:
-      "Joining Srijansil Club was one of the best decisions I've made. The opportunities for leadership development and community service have been transformative for my personal growth and professional development.",
-    avatar: treasurer,
-  },
-  {
-    id: 7,
-    name: "Shradha Bastola",
-    role: "Vice Secretary",
-    organization: "Srijansil Club",
-    testimonial:
-      "Organizing events with Srijansil has taught me invaluable skills in project management and teamwork. The support from fellow members makes even the most challenging projects achievable and enjoyable.",
-    avatar: vicesecretary,
-  },
-  {
-    id: 8,
-    name: "Ayush Pokhrel",
-    role: "Media Handler",
-    organization: "Srijansil Club",
-    testimonial:
-      "Being the media Head has allowed me to connect our club with the wider community. The positive impact we create through our outreach programs is incredibly rewarding and motivates me to do more.",
-    avatar: mediaHandler,
-  },
-  {
-    id: 9,
-    name: "Anish Pokhrel",
-    role: "Life Member",
-    organization: "Srijansil Club",
-    testimonial:
-      "Srijansil Club's commitment to technological innovation has given me a platform to apply and expand my skills. Working with like-minded individuals on tech projects has been an amazing learning experience.",
-    avatar: ordinary,
-  },
-   {
-    id: 10,
-    name: "Yogesh Dahal",
-    role: "Comittee Member",
-    organization: "Srijansil Club",
-    testimonial:
-      "Srijansil Club's commitment to technological innovation has given me a platform to apply and expand my skills. Working with like-minded individuals on tech projects has been an amazing learning experience.",
-    avatar: yogesh,
-  },
-     {
-    id: 11,
-    name: "Binda Sigdel",
-    role: "Member",
-    organization: "Srijansil Club",
-    testimonial:
-      "Srijansil Club's commitment to technological innovation has given me a platform to apply and expand my skills. Working with like-minded individuals on tech projects has been an amazing learning experience.",
-    avatar: null,
-  },
-  {
-    id: 12,
-    name: "Rabin Rai",
-    role: "Member",
-    organization: "Srijansil Club",
-    testimonial:
-      "Srijansil Club's commitment to technological innovation has given me a platform to apply and expand my skills. Working with like-minded individuals on tech projects has been an amazing learning experience.",
-    avatar: null,
-  },
-  {
-    id:13,
-    name:"Ramesh Khanal",
-    role:"Member",
-    organization:"Srijansil Club",
-    testimonial:
-      "Srijansil Club's commitment to technological innovation has given me a platform to apply and expand my skills. Working with like-minded individuals on tech projects has been an amazing learning experience.",
-    avatar: null,
-  }
+const MEMBER_TYPES = [
+  { key: "executive", label: "Executive Committee", description: "The leaders who guide our club's vision and initiatives" },
+  { key: "team", label: "Our Teams", description: "Dedicated team members working behind the scenes" },
+  { key: "member", label: "Members", description: "Every member brings unique skills and perspectives to our community" },
 ];
-console.log(ALL_MEMBERS)
-
-// Group members by role priority
-const EXECUTIVE_ROLES = ["President", "Vice President", "Secretary", "Vice Secretary"];
 
 export default function MembersPage() {
-  // Separate executives and other members
-  const executives = ALL_MEMBERS.filter(m => EXECUTIVE_ROLES.includes(m.role));
-  const otherMembers = ALL_MEMBERS.filter(m => !EXECUTIVE_ROLES.includes(m.role));
+  const [activeTab, setActiveTab] = useState("executive");
+  const [page, setPage] = useState(1);
+  const limit = 12;
+
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: ["publicMembers", activeTab, page, limit],
+    queryFn: () => getPublicMembers({ memberType: activeTab, page, limit }),
+    staleTime: 1000 * 60 * 5,
+    keepPreviousData: true,
+  });
+
+  const members = data?.data ?? [];
+  const totalMembers = data?.totalMembers ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalMembers / limit));
+
+  // Reset page when tab changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
+  // Get active type info
+  const activeType = useMemo(() => 
+    MEMBER_TYPES.find(t => t.key === activeTab), 
+    [activeTab]
+  );
+
+  // Transform API data to match MemberCard props
+  const transformMember = (member) => ({
+    id: member.id,
+    name: member.name,
+    role: member.role,
+    organization: "Srijansil Club",
+    testimonial:member.description,
+    avatar: getImageUrl(member.image), 
+
+  });
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -177,69 +86,175 @@ export default function MembersPage() {
         </motion.div>
       </section>
 
-      {/* Executive Members Section */}
+      {/* Tab Navigation */}
+      <section className="py-8 px-6 bg-gray-50 border-b border-gray-100 sticky top-16 z-40">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-wrap justify-center gap-2">
+            {MEMBER_TYPES.map((type) => (
+              <button
+                key={type.key}
+                onClick={() => handleTabChange(type.key)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  activeTab === type.key
+                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 scale-105"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:text-blue-600"
+                }`}
+              >
+                <span>{type.label}</span>
+                {activeTab === type.key && totalMembers > 0 && (
+                  <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-white/20">
+                    {totalMembers}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Members Section */}
       <section className="py-20 px-6 md:px-20 bg-gradient-to-b from-gray-50 to-white">
         <motion.div
           className="max-w-6xl mx-auto"
           initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
+          animate={{ opacity: 1 }}
         >
-          <div className="text-center mb-12">
-            <span className="inline-block px-4 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold mb-4">
-              Leadership
+          {/* Section Header */}
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-12"
+          >
+            <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-4 ${
+              activeTab === 'executive' ? 'bg-blue-100 text-blue-700' :
+              activeTab === 'team' ? 'bg-green-100 text-green-700' :
+              'bg-amber-100 text-amber-700'
+            }`}>
+              {activeType?.label}
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Executive <span className="text-blue-600">Committee</span>
+              {activeTab === 'executive' && <>Executive <span className="text-blue-600">Committee</span></>}
+              {activeTab === 'team' && <>Our <span className="text-green-600">Teams</span></>}
+              {activeTab === 'member' && <>Club <span className="text-amber-500">Members</span></>}
             </h2>
             <p className="text-gray-600 max-w-xl mx-auto">
-              The leaders who guide our club's vision and initiatives
+              {activeType?.description}
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {executives.map((member, index) => (
-              <MemberCard
-                key={member.id}
-                member={member}
-                index={index}
-                compact={false}
-              />
-            ))}
-          </div>
-        </motion.div>
-      </section>
+          {/* Loading State */}
+          {isLoading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[...Array(8)].map((_, i) => (
+                <MemberCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
 
-      {/* All Members Section */}
-      <section className="py-20 px-6 md:px-20 bg-white">
-        <motion.div
-          className="max-w-6xl mx-auto"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-        >
-          <div className="text-center mb-12">
-            <span className="inline-block px-4 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold mb-4">
-              Team Members
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Our <span className="text-amber-500">Team</span>
-            </h2>
-            <p className="text-gray-600 max-w-xl mx-auto">
-              Every member brings unique skills and perspectives to our community
-            </p>
-          </div>
+          {/* Error State */}
+          {isError && (
+            <div className="text-center py-16">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-red-600 font-medium">Failed to load members</p>
+              <p className="text-gray-500 text-sm mt-1">Please try again later</p>
+            </div>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {otherMembers.map((member, index) => (
-              <MemberCard
-                key={member.id}
-                member={member}
-                index={index}
-                compact={false}
-              />
-            ))}
-          </div>
+          {/* Empty State */}
+          {!isLoading && !isError && members.length === 0 && (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                {/* <span className="text-4xl">{activeType?.icon}</span> */}
+              </div>
+              <p className="text-gray-600 font-medium">No {activeType?.label?.toLowerCase()} found</p>
+              <p className="text-gray-400 text-sm mt-1">Check back soon!</p>
+            </div>
+          )}
+
+          {/* Members Grid */}
+          {!isLoading && !isError && members.length > 0 && (
+            <motion.div 
+              layout 
+              className={`grid gap-8 ${
+                isFetching ? 'opacity-60' : 'opacity-100'
+              } transition-opacity ${
+                members.length <= 3 
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto' 
+                  : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+              }`}
+            >
+              <AnimatePresence mode="popLayout">
+                {members.map((member, index) => (
+                  <MemberCard
+                    key={member.id}
+                    member={transformMember(member)}
+                    index={index}
+                    compact={true}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {/* Pagination */}
+          {!isLoading && totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-12">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="p-3 border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              {/* Page numbers */}
+              <div className="flex gap-1">
+                {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (page <= 3) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setPage(pageNum)}
+                      className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+                        page === pageNum
+                          ? "bg-blue-600 text-white shadow-md"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="p-3 border border-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition-colors disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
         </motion.div>
       </section>
 

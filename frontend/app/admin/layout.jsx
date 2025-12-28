@@ -17,6 +17,8 @@ export default function AdminLayout({ children }) {
     { name: "Notices", link: "/admin/notices" },
     { name: "Resources", link: "/admin/resources" },
     { name: "Users", link: "/admin/users" },
+    { name: "Check-In", link: "/admin/checkin" },
+    { name: "Members", link: "/admin/members" },
     { name: "Inquiries", link: "/admin/inquiries" },
   ];
 

@@ -245,6 +245,19 @@ function ResourceFormModal({ resource, onClose, onSubmit, isLoading, title }) {
   });
   const [file, setFile] = useState(null);
 
+  // Get existing file URL for display
+  const getExistingFileUrl = () => {
+    const url = resource?.url || resource?.fileUrl || resource?.file;
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+    const filename = url.split('/').pop();
+    return `${BACKEND_URL}/uploads/${filename}`;
+  };
+
+  const existingFileUrl = resource ? getExistingFileUrl() : null;
+  const existingFileName = resource?.url ? resource.url.split('/').pop() : null;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData();
@@ -280,6 +293,27 @@ function ResourceFormModal({ resource, onClose, onSubmit, isLoading, title }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               File {resource ? '(leave empty to keep current)' : ''}
             </label>
+            
+            {/* Show existing file if editing */}
+            {resource && existingFileUrl && !file && (
+              <div className="mb-2 p-3 bg-gray-50 border rounded-lg flex items-center gap-3">
+                <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-700 truncate">{existingFileName}</p>
+                  <a 
+                    href={existingFileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    View current file
+                  </a>
+                </div>
+              </div>
+            )}
+            
             <input
               type="file"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
@@ -287,6 +321,9 @@ function ResourceFormModal({ resource, onClose, onSubmit, isLoading, title }) {
               disabled={isLoading}
               required={!resource}
             />
+            {file && (
+              <p className="text-sm text-green-600 mt-1">New file selected: {file.name}</p>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

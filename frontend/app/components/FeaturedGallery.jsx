@@ -23,8 +23,8 @@ export default function FeaturedGallery() {
   const getImageUrl = (url) => {
     if (!url) return "";
     if (url.startsWith("http")) return url;
-    const filename = url.split("/").pop();
-    return `${BACKEND_URL}/uploads/${filename}`;
+
+    return `${BACKEND_URL}/${url}`;
   };
 
   const nextSlide = () => {

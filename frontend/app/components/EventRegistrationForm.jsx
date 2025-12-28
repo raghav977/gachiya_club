@@ -246,14 +246,14 @@ export default function EventRegistrationForm({
 
         <div>
           <label className={labelClass}>Payment Voucher (PNG, JPG or PDF)</label>
-          <input type="file" accept="image/png,image/jpeg,application/pdf" onChange={handleFile(setPaymentFile)} className="w-full" />
+          <input type="file" accept="image/png,image/jpeg,application/pdf" onChange={handleFile(setPaymentFile)} className="w-full border p-3 rounded-xl" />
           <div className="mt-2">{renderPreview(paymentFile)}</div>
           {errors.paymentFile && <div className="text-xs text-red-600">{errors.paymentFile}</div>}
         </div>
 
         <div>
           <label className={labelClass}>Authentic Document (ID Proof) (PNG, JPG or PDF)</label>
-          <input type="file" accept="image/png,image/jpeg,application/pdf" onChange={handleFile(setAuthFile)} className="w-full" />
+          <input type="file" accept="image/png,image/jpeg,application/pdf" onChange={handleFile(setAuthFile)} className="w-full border p-3 rounded-xl" />
           <div className="mt-2">{renderPreview(authFile)}</div>
           {errors.authFile && <div className="text-xs text-red-600">{errors.authFile}</div>}
         </div>

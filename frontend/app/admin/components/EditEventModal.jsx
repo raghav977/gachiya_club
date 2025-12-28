@@ -19,6 +19,8 @@ export default function EditEventModal({ show, onClose, event, onSave, isLoading
   // Edit category state
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [editingCategoryTitle, setEditingCategoryTitle] = useState('');
+  const [editingBibStart, setEditingBibStart] = useState('');
+  const [editingBibEnd, setEditingBibEnd] = useState('');
   const [isSavingCategory, setIsSavingCategory] = useState(false);
 
   const fetchEventDetail = async(event)=>{
@@ -74,31 +76,61 @@ export default function EditEventModal({ show, onClose, event, onSave, isLoading
   const startEditingCategory = (cat) => {
     setEditingCategoryId(cat.id);
     setEditingCategoryTitle(cat.title);
+    setEditingBibStart(cat.bibStart || '');
+    setEditingBibEnd(cat.bibEnd || '');
   };
 
   // Cancel editing
   const cancelEditingCategory = () => {
     setEditingCategoryId(null);
     setEditingCategoryTitle('');
+    setEditingBibStart('');
+    setEditingBibEnd('');
   };
 
   // Save category edit
   const saveEditingCategory = async () => {
     if (!editingCategoryTitle.trim() || !editingCategoryId) return;
     
+    const bibStartNum = editingBibStart ? parseInt(editingBibStart) : null;
+    const bibEndNum = editingBibEnd ? parseInt(editingBibEnd) : null;
+    
+    // Validate BIB range
+    if ((bibStartNum && !bibEndNum) || (!bibStartNum && bibEndNum)) {
+      toast.error("Please enter both BIB start and end, or leave both empty");
+      return;
+    }
+    
+    if (bibStartNum && bibEndNum && bibStartNum >= bibEndNum) {
+      toast.error("BIB start must be less than BIB end");
+      return;
+    }
+    
     setIsSavingCategory(true);
     try {
       const cat = categories.find(c => c.id === editingCategoryId);
-      await updateCategory(editingCategoryId, editingCategoryTitle.trim(), cat?.isActive ?? true);
+      await updateCategory(editingCategoryId, {
+        title: editingCategoryTitle.trim(),
+        isActive: cat?.isActive ?? true,
+        bibStart: bibStartNum,
+        bibEnd: bibEndNum
+      });
       
       // Update local state
       setCategories(prev => 
         prev.map(c => 
-          c.id === editingCategoryId ? { ...c, title: editingCategoryTitle.trim() } : c
+          c.id === editingCategoryId ? { 
+            ...c, 
+            title: editingCategoryTitle.trim(),
+            bibStart: bibStartNum,
+            bibEnd: bibEndNum
+          } : c
         )
       );
       setEditingCategoryId(null);
       setEditingCategoryTitle('');
+      setEditingBibStart('');
+      setEditingBibEnd('');
       toast.success("Category updated successfully!");
     } catch (error) {
       console.error("Error updating category:", error);
@@ -123,7 +155,12 @@ export default function EditEventModal({ show, onClose, event, onSave, isLoading
     );
     
     try {
-      await updateCategory(categoryId, cat.title, newIsActive);
+      await updateCategory(categoryId, { 
+        title: cat.title, 
+        isActive: newIsActive,
+        bibStart: cat.bibStart,
+        bibEnd: cat.bibEnd
+      });
       toast.success(newIsActive ? "Category activated!" : "Category deactivated!");
     } catch (error) {
       console.error("Error toggling category:", error);
@@ -272,48 +309,72 @@ export default function EditEventModal({ show, onClose, event, onSave, isLoading
                       }`}
                     >
                       {editingCategoryId === cat.id ? (
-                        // Editing mode
-                        <>
-                          <input
-                            type="text"
-                            value={editingCategoryTitle}
-                            onChange={(e) => setEditingCategoryTitle(e.target.value)}
-                            className="flex-1 border px-3 py-1.5 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                            disabled={isSavingCategory}
-                            autoFocus
-                            maxLength={100}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                saveEditingCategory();
-                              } else if (e.key === 'Escape') {
-                                cancelEditingCategory();
-                              }
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={saveEditingCategory}
-                            disabled={isSavingCategory || !editingCategoryTitle.trim()}
-                            className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
-                          >
-                            {isSavingCategory ? <ButtonLoader size="sm" /> : '✓'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelEditingCategory}
-                            disabled={isSavingCategory}
-                            className="px-3 py-1.5 bg-gray-400 text-white rounded text-sm hover:bg-gray-500"
-                          >
-                            ✕
-                          </button>
-                        </>
+                        // Editing mode - expanded view
+                        <div className="w-full space-y-2">
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="text"
+                              value={editingCategoryTitle}
+                              onChange={(e) => setEditingCategoryTitle(e.target.value)}
+                              className="flex-1 border px-3 py-1.5 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                              placeholder="Category name"
+                              disabled={isSavingCategory}
+                              autoFocus
+                              maxLength={100}
+                            />
+                            <button
+                              type="button"
+                              onClick={saveEditingCategory}
+                              disabled={isSavingCategory || !editingCategoryTitle.trim()}
+                              className="px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
+                            >
+                              {isSavingCategory ? <ButtonLoader size="sm" /> : '✓ Save'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEditingCategory}
+                              disabled={isSavingCategory}
+                              className="px-3 py-1.5 bg-gray-400 text-white rounded text-sm hover:bg-gray-500"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <div className="flex gap-2 items-center bg-blue-100/50 p-2 rounded">
+                            <span className="text-xs text-blue-700 font-medium whitespace-nowrap">BIB Range:</span>
+                            <input
+                              type="number"
+                              value={editingBibStart}
+                              onChange={(e) => setEditingBibStart(e.target.value)}
+                              className="w-20 border px-2 py-1 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                              placeholder="Start"
+                              disabled={isSavingCategory}
+                              min="1"
+                            />
+                            <span className="text-gray-400 text-sm">to</span>
+                            <input
+                              type="number"
+                              value={editingBibEnd}
+                              onChange={(e) => setEditingBibEnd(e.target.value)}
+                              className="w-20 border px-2 py-1 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                              placeholder="End"
+                              disabled={isSavingCategory}
+                              min="1"
+                            />
+                          </div>
+                        </div>
                       ) : (
                         // Display mode
                         <>
-                          <span className={`flex-1 text-sm font-medium ${!cat.isActive ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                            {cat.title}
-                          </span>
+                          <div className="flex-1">
+                            <span className={`text-sm font-medium ${!cat.isActive ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                              {cat.title}
+                            </span>
+                            {(cat.bibStart || cat.bibEnd) && (
+                              <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
+                                BIB: {cat.bibStart}-{cat.bibEnd}
+                              </span>
+                            )}
+                          </div>
                           <button
                             type="button"
                             onClick={() => startEditingCategory(cat)}

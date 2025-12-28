@@ -40,8 +40,8 @@ export default function Contact() {
 
   const contactInfo = [
     { icon: "📧", label: "Email", value: "srijansilclub@gmail.com" },
-    { icon: "📍", label: "Location", value: "Gachiya SundarHaraicha, Nepal" },
-    { icon: "📱", label: "Phone", value: "+977 98XXXXXXXX" },
+    { icon: "📍", label: "Location", value: " SundarHaraicha 03, Lochani" },
+    { icon: "📱", label: "Phone", value: "+977 9861604688/ 9807082682" },
   ];
 
   return (
