@@ -1,25 +1,21 @@
 import { regisetEvent, updateEventService, getAllEventService, viewEventService, adminLevelViewEventService  } from "../services/eventService.js";
+import { getRelativeImagePath } from "../middleware/multerConfig.js";
+
+
 import path from "path";
-
-
-
 
 export const createEvent = async (req, res) => {
     // console.log(req.file);
-  // multer provides a filesystem path in req.file.path; convert to a public URL path
-  const imageURl = req.file?.path;
-  const imagePublicUrl = imageURl ? `${req.protocol}://${req.get('host')}/uploads/${path.basename(imageURl)}` : null;
+  // Convert absolute path to relative path for database storage
+  const imageUrl = getRelativeImagePath(req.file?.path);
     const { title, description, startDate, isPublish, note } = req.body;
     
     try {
 
-    const result = await regisetEvent( title, description, startDate, isPublish, note, imageURl);
+    const result = await regisetEvent( title, description, startDate, isPublish, note, imageUrl);
         // console.log(result);
          
-    // return created event and a public image URL for frontend
-    const returned = result.toJSON ? result.toJSON() : result;
-    returned.imageURL = imagePublicUrl;
-    return res.status(200).json({message: "Successfully created new event", data: returned});
+    return res.status(200).json({message: "Successfully created new event", data: result});
 
     }
     catch (err) {
@@ -33,9 +29,8 @@ export const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, note, isPublish, isActive } = req.body;
-    // accept optional uploaded image (multer sets req.file)
-  const imageURl = req.file?.path;
-  const imagePublicUrl = imageURl ? `${req.protocol}://${req.get('host')}/uploads/${path.basename(imageURl)}` : null;
+    // Convert absolute path to relative path for database storage
+    const imageUrl = getRelativeImagePath(req.file?.path);
 
     if (!id) {
       return res.status(400).json({
@@ -50,16 +45,12 @@ export const updateEvent = async (req, res) => {
       note,
       isPublish,
       isActive,
-      imageURl
+      imageUrl
     );
-
-    const returned = updatedEvent.toJSON ? updatedEvent.toJSON() : updatedEvent;
-    // if a new image was uploaded, include public image url
-    if (imagePublicUrl) returned.imageURL = imagePublicUrl;
 
     return res.status(200).json({
       message: "Event updated successfully",
-      data: returned
+      data: updatedEvent
     });
 
   } catch (err) {

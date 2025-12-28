@@ -2,8 +2,10 @@ import { sequelize } from "../config/db.js";
 import Event from "../models/evenetModel.js";
 import Category from "../models/categoryModels.js";
 import Player from "../models/playerModel.js";
+import Gallery from "../models/GalleryModel.js";
+import Member from "../models/memberModel.js";
 import { HasMany } from "sequelize";
-
+import Inquiry from "../models/messageModel.js";
 Event.hasMany(Category, {foreignKey:"eventId"});
 Category.belongsTo(Event, {foreignKey: "eventId"});
 

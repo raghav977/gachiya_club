@@ -6,6 +6,11 @@ import syncDatabase from './src/services/relation_table.js';
 import playerRouter from "./src/routes/playerRoutes.js";
 import categoryRouter from "./src/routes/categoryRoutes.js";
 import adminRouter from "./src/routes/adminRoutes.js";
+import noticeRouter from "./src/routes/noticeRoutes.js";
+import resourceRouter from "./src/routes/resourcesRoutes.js";
+import galleryRouter from "./src/routes/galleryRoutes.js";
+import inquiryRouter from "./src/routes/inquiryRoute.js";
+import memberRouter from "./src/routes/memberRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
@@ -58,6 +63,11 @@ app.use("/api/admin", sensitiveLimiter);
 app.use("/api/event", eventRouter);
 app.use("/api/player", playerRouter);
 app.use("/api/category", categoryRouter);
+app.use("/api/notice", noticeRouter);
+app.use("/api/resource", resourceRouter);
+app.use("/api/gallery", galleryRouter);
+app.use("/api/inquiry", inquiryRouter);
+app.use("/api/member", memberRouter);
 app.use("/api", adminRouter);
 
 

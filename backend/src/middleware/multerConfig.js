@@ -25,4 +25,26 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+/**
+ * Convert absolute filesystem path to relative path for database storage
+ * e.g., /Users/.../backend/uploads/123-image.png -> uploads/123-image.png
+ * @param {string} absolutePath - The absolute path from req.file.path
+ * @returns {string|null} - Relative path starting with "uploads/" or null
+ */
+export const getRelativeImagePath = (absolutePath) => {
+  if (!absolutePath) return null;
+  const filename = path.basename(absolutePath);
+  return `uploads/${filename}`;
+};
+
+/**
+ * Get just the filename from a file path
+ * @param {string} filePath - Any path
+ * @returns {string|null} - Just the filename
+ */
+export const getFilename = (filePath) => {
+  if (!filePath) return null;
+  return path.basename(filePath);
+};
+
 export default upload;

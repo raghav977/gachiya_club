@@ -92,21 +92,21 @@ export const getAllEventService = async (search = "", limit = 10, offset = 0) =>
 
 export const viewEventService = async (id) => {
   try {
-    if (!id) {
-      throw new Error("Event ID is required");
-    }
+    if (!id) throw new Error("Event ID is required");
 
-    const eventDetails = await Event.findByPk(id, {
-      where:{
+    const eventDetails = await Event.findOne({
+      where: {
+        id,
         isActive: true
       },
       include: [
         {
           model: Category,
           attributes: ["id", "title", "isActive"],
+          where: { isActive: true },
+          required: false 
         }
       ]
-
     });
 
     if (!eventDetails) {
@@ -114,12 +114,12 @@ export const viewEventService = async (id) => {
     }
 
     return eventDetails;
-
   } catch (err) {
     console.error("Error from viewEvent service:", err.message);
     throw err;
   }
 };
+
 
 
 export const adminLevelViewEventService = async (id) => {

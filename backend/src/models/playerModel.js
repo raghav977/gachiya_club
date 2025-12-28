@@ -6,12 +6,12 @@ const Player = sequelize.define(
     "Player",
     {
         fullName: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(100),
             allowNull: false
 
         },
         address: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(250),
             allowNull: false
         },
         dateOfBirth: {
@@ -25,11 +25,11 @@ const Player = sequelize.define(
 
         },
         email: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(100),
 
         },
         contactNumber: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(20),
             allowNull: false
         },
         TshirtSize: {
@@ -42,18 +42,39 @@ const Player = sequelize.define(
             allowNull:false
         },
         emergencyContact:{
-            type:DataTypes.STRING,
+            type:DataTypes.STRING(20),
             allowNull:false
         },
         paymentVoucher:{
-            type:DataTypes.STRING,
+            type:DataTypes.STRING(500),
             allowNull:false
         },
         authenticateDocument:{
-            type:DataTypes.STRING,
+            type:DataTypes.STRING(500),
             allowNull:false
-        }
+        },
+        verificationStatus: {
+            type: DataTypes.ENUM("pending", "verified", "rejected"),
+            defaultValue: "pending",
+            allowNull: false
+        },
+        bibNumber: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            defaultValue: null
+        },
+        // When the player was verified
+        verifiedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null
+        },
+        rejectionReason: {
+            type: DataTypes.STRING(500),
+            allowNull: true,
+            defaultValue: null
 
+    }
     }
 )
 

@@ -3,9 +3,9 @@ import { createCategoryService, updateCategoryServices } from "../services/categ
 export const createCategory = async (req, res) => {
     // console.log("This is request body:", req.body);
     try {
-        const {EventId, title } = req.body;
+        const { EventId, title, bibStart, bibEnd } = req.body;
 
-        const result = await createCategoryService(EventId, title);
+        const result = await createCategoryService(EventId, title, bibStart, bibEnd);
         if (!result) {
             throw err("Cannot create new category");
         }
@@ -14,6 +14,7 @@ export const createCategory = async (req, res) => {
     }
     catch (err) {
         // console.log(err.message);
+        return res.status(500).json({ message: err.message || "Failed to create category" });
     }
 
 }
@@ -21,20 +22,21 @@ export const createCategory = async (req, res) => {
 export const updateCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title } = req.body;
+        const { title, isActive, bibStart, bibEnd } = req.body;
 
-        const result = updateCategoryServices(id, title);
+        const result = await updateCategoryServices(id, title, isActive, bibStart, bibEnd);
 
         if (!result) {
             throw new Error("Cannot update category");
         }
 
-        return res.status(200).json({message: "Category updated sucessfully", data:result})
+        return res.status(200).json({message: "Category updated sucessfully", data: result})
 
 
     }
     catch(err){
-        // console.log(err.message);
+        console.log("Update category error:", err.message);
+        return res.status(500).json({ message: err.message || "Failed to update category" });
     }
    
 }
