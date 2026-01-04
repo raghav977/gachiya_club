@@ -1,13 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
+import { useState } from "react";
 
 /**
  * MemberCard - Testimonial card component with golden/blue theme
  */
 export default function MemberCard({ member, index = 0, compact = false }) {
-  // console.log("this is member", member);
+  const [showReadmore, setShowReadmore] = useState(false);
+
   const {
     name = "Member Name",
     role = "Position",
@@ -15,15 +16,14 @@ export default function MemberCard({ member, index = 0, compact = false }) {
     testimonial = "",
     avatar = null,
   } = member || {};
-  // console.log("this is avatar", avatar);
-
-  // console.log("this is name", name);
 
   const maxLength = 180;
   const isLong = testimonial.length > maxLength;
-  const displayText = compact && isLong 
-    ? testimonial.slice(0, maxLength) + "..." 
-    : testimonial;
+
+  const displayText =
+    compact && isLong && !showReadmore
+      ? testimonial.slice(0, maxLength) + "..."
+      : testimonial;
 
   return (
     <motion.div
@@ -37,23 +37,30 @@ export default function MemberCard({ member, index = 0, compact = false }) {
       <div className="relative bg-white rounded-2xl border-2 border-blue-200 p-6 pb-8 shadow-sm hover:shadow-xl hover:border-amber-300 transition-all duration-300 group">
         {/* Top accent line */}
         <div className="absolute top-0 left-4 right-4 h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-blue-500 rounded-t-lg -translate-y-[2px]" />
-        
+
         {/* Quote icon */}
         <div className="absolute -top-3 left-6 w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-500 rounded-lg flex items-center justify-center shadow-md">
           <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
             <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
           </svg>
         </div>
-        
+
         {/* Quote text */}
-        <p className="text-gray-700 text-center leading-relaxed text-sm md:text-base mt-4">
+        <motion.p
+          layout
+          className="text-gray-700 text-center leading-relaxed text-sm md:text-base mt-4"
+        >
           &ldquo;{displayText}&rdquo;
+
           {compact && isLong && (
-            <span className="text-blue-500 hover:text-blue-600 cursor-pointer ml-1 font-medium">
-              read more
+            <span
+              className="text-blue-500 hover:text-blue-600 cursor-pointer ml-2 font-medium"
+              onClick={() => setShowReadmore((prev) => !prev)}
+            >
+              {showReadmore ? "Read Less" : "Read More"}
             </span>
           )}
-        </p>
+        </motion.p>
 
         {/* Speech bubble pointer */}
         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-white border-b-2 border-r-2 border-blue-200 group-hover:border-amber-300 rotate-45 transition-colors" />
