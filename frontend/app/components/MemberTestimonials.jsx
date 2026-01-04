@@ -50,7 +50,7 @@ const FEATURED_MEMBERS = [
   },
 ];
 
-console.log(FEATURED_MEMBERS);
+// console.log(FEATURED_MEMBERS);
 /**
  * MemberTestimonials - Home page section showing featured member testimonials
  */

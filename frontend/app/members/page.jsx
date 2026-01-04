@@ -28,6 +28,7 @@ export default function MembersPage() {
   });
 
   const members = data?.data ?? [];
+
   const totalMembers = data?.totalMembers ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalMembers / limit));
 
@@ -46,7 +47,7 @@ export default function MembersPage() {
   // Transform API data to match MemberCard props
   const transformMember = (member) => ({
     id: member.id,
-    name: member.name,
+    name: member.fullName,
     role: member.role,
     organization: "Srijansil Club",
     testimonial:member.description,

@@ -26,7 +26,7 @@ export default function UserDetailModal({ playerId, onClose }) {
   });
 
   if (!playerId) return null;
-  console.log("Player detail data:", data);
+  // console.log("Player detail data:", data);
 
   // Helper to convert server file path to URL
   const toPublicUrl = (filePath) => {

@@ -246,7 +246,7 @@ export default function AdminMembersPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Submitting form data:", formData);
+    // console.log("Submitting form data:", formData);
     const fd = new FormData();
     fd.append("fullName", formData.fullName);
     fd.append("role", formData.role);

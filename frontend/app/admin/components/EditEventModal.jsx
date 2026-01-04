@@ -27,7 +27,7 @@ export default function EditEventModal({ show, onClose, event, onSave, isLoading
     setIsFetching(true);
     try {
       const data = await getEventDetail(event.id);
-      console.log("Fetched event detail:", data);
+      // console.log("Fetched event detail:", data);
 
       setForm({
         title: data.data.title || '',
@@ -200,7 +200,7 @@ export default function EditEventModal({ show, onClose, event, onSave, isLoading
         ) : (
           <form onSubmit={(e) => {
             e.preventDefault();
-            console.log("Submitting form:", form, imageFile);
+            // console.log("Submitting form:", form, imageFile);
             const fd = new FormData();
             fd.append('title', form.title);
             fd.append('startDate', form.startDate);

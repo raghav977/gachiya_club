@@ -22,7 +22,7 @@ export const getAllEvents = async ({ page = 1, limit = 10, search = "" } = {}) =
     const url = `${BACKEND_URL}/api/event/getall?${params.toString()}`;
     const response = await fetch(url);
     const data = await response.json();
-    console.log("Fetched events data:", data);
+    // console.log("Fetched events data:", data);
     // backend already returns 404 when no events — normalize to empty list
     if (!data) return { message: "No events found", page, limit, totalEvents: 0, data: [] };
     return data;
@@ -33,7 +33,7 @@ export const getAllEvents = async ({ page = 1, limit = 10, search = "" } = {}) =
 }
 
 export const updateEvent = async (id, eventData) => {
-  console.log("updating event id:", id, "with data:", eventData);
+  // console.log("updating event id:", id, "with data:", eventData);
   try {
     // if caller passed a FormData (contains an image), send as multipart PATCH
     if (typeof FormData !== 'undefined' && eventData instanceof FormData) {

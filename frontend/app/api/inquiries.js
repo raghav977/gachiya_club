@@ -15,7 +15,7 @@ export const getAllInquiries = async ({ page = 1, limit = 10, status = '', searc
   if (search) params.append('search', search);
 
   const response = await apiGet(`/api/inquiry?${params.toString()}`);
-  console.log("Response:", response);
+  // console.log("Response:", response);
   return response; // apiGet already returns parsed JSON, no need for .data
 };
 

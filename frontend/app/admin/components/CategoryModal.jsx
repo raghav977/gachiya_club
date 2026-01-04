@@ -5,7 +5,7 @@ import { ButtonLoader } from "@/app/components/LoadingOverlay";
 
 
 export default function CategoryModal({setCategoryModal,event}) {
-    console.log("Event in CategoryModal:",event);
+    // console.log("Event in CategoryModal:",event);
     const [categoryName, setCategoryName] = useState("");
     const [bibStart, setBibStart] = useState("");
     const [bibEnd, setBibEnd] = useState("");
@@ -31,7 +31,7 @@ export default function CategoryModal({setCategoryModal,event}) {
         setIsLoading(true);
         try{
             const response = await categoryRegister(categoryName, event.id, bibStartNum, bibEndNum);
-            console.log("Category registered successfully:",await response);
+            // console.log("Category registered successfully:",await response);
             setCategoryModal(false);
         }
         catch(err){

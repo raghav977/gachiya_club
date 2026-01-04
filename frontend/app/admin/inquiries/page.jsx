@@ -36,7 +36,7 @@ export default function InquiriesPage() {
     queryFn: () => getAllInquiries({ page, limit, status: statusFilter, search }),
     keepPreviousData: true,
   });
-  console.log("Inquiries Data:", data);
+  // console.log("Inquiries Data:", data);
 
   const inquiries = data?.data || [];
   const totalInquiries = data?.totalInquiries || 0;

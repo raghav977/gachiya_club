@@ -6,7 +6,7 @@ export const getImageUrl = (imagePath) => {
   if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
     return imagePath;
   }
-  console.log("Constructed Image URL:", `${BACKEND_URL}/${imagePath.replace(/^\/+/, "")}`);
+  // console.log("Constructed Image URL:", `${BACKEND_URL}/${imagePath.replace(/^\/+/, "")}`);
 
    return `${BACKEND_URL}/${imagePath.replace(/^\/+/, "")}`;
 }

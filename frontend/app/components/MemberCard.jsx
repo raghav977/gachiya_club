@@ -7,6 +7,7 @@ import Image from "next/image";
  * MemberCard - Testimonial card component with golden/blue theme
  */
 export default function MemberCard({ member, index = 0, compact = false }) {
+  // console.log("this is member", member);
   const {
     name = "Member Name",
     role = "Position",
@@ -14,7 +15,9 @@ export default function MemberCard({ member, index = 0, compact = false }) {
     testimonial = "",
     avatar = null,
   } = member || {};
-  console.log("this is avatar", avatar);
+  // console.log("this is avatar", avatar);
+
+  // console.log("this is name", name);
 
   const maxLength = 180;
   const isLong = testimonial.length > maxLength;
