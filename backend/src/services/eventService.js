@@ -102,7 +102,7 @@ export const viewEventService = async (id) => {
       include: [
         {
           model: Category,
-          attributes: ["id", "title", "isActive"],
+          attributes: ["id", "title", "isActive","bibStart","bibEnd"],
           where: { isActive: true },
           required: false 
         }
