@@ -3,9 +3,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 
-/**
- * MemberCard - Testimonial card component with golden/blue theme
- */
+
 export default function MemberCard({ member, index = 0, compact = false }) {
   const [showReadmore, setShowReadmore] = useState(false);
 
@@ -62,11 +60,11 @@ export default function MemberCard({ member, index = 0, compact = false }) {
           )}
         </motion.p>
 
-        {/* Speech bubble pointer */}
+
         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-white border-b-2 border-r-2 border-blue-200 group-hover:border-amber-300 rotate-45 transition-colors" />
       </div>
 
-      {/* Avatar */}
+
       <div className="relative -mt-1 z-10">
         <div className="w-40 h-40 border rounded-full overflow-hidden ring-4 ring-amber-400 bg-gradient-to-br from-blue-100 to-amber-100 shadow-lg mt-4">
           {avatar ? (
@@ -85,7 +83,7 @@ export default function MemberCard({ member, index = 0, compact = false }) {
         </div>
       </div>
 
-      {/* Member Info */}
+
       <div className="text-center mt-3">
         <h3 className="font-bold text-gray-900 text-lg">{name}</h3>
         <p className="text-amber-600 text-sm font-medium">{role}</p>
@@ -95,9 +93,7 @@ export default function MemberCard({ member, index = 0, compact = false }) {
   );
 }
 
-/**
- * MemberCardSkeleton - Loading skeleton for MemberCard
- */
+
 export function MemberCardSkeleton() {
   return (
     <div className="relative flex flex-col items-center animate-pulse">

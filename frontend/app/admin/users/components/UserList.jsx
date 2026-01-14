@@ -391,6 +391,29 @@ export default function UserList() {
           </div>
         </div>
       )}
+      {/* pagination */}
+      <div className="flex justify-between items-center mt-4">
+        <div>
+          Page {page} of {Math.ceil(total / limit) || 1}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPage((old) => Math.max(old - 1, 1))}
+            disabled={page === 1}
+            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setPage((old) => (old * limit < total ? old + 1 : old))}
+            disabled={page * limit >= total}
+            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+
+      </div>
     </div>
   );
 }
